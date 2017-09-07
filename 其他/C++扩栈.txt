@@ -1,0 +1,2 @@
+#pragma comment(linker,"/STACK:102400000,102400000")
+写在代码开头，只有C++编译器才能用，g++和gcc不能。
