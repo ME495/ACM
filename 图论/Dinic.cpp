@@ -4,7 +4,7 @@
 using namespace std;
 #define N 1000010
 int inf=0x3f3f3f3f;
-int head[N],to[N*12],pre[N*12],cap[N*12],dis[N],cur[N],q[N],vis[N];
+int head[N],to[N*12],pre[N*12],cap[N*12],dis[N],q[N],vis[N];
 int n,m,e,cnt;
 void addedge(int x,int y,int c)
 {
@@ -55,7 +55,6 @@ int solve()
 	int ans=0,f,s=0,t=get_id(n-1,m-1);
 	while(bfs(s,t))
 	{
-		for(int i=s;i<=t;++i) cur[i]=head[i];
 		ans+=dfs(s,t,inf);
 	}
 	return ans;
