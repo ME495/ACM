@@ -1,153 +1,153 @@
-//题意：有N个城市，M个雷达站，K个操作员，从M个雷达站中选择K个，来覆盖所有的N城市，每个雷达有相同的覆盖半径，问：最小的覆盖半径是多少
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
+#include <cstdio>
+#include <cstring>
 #include <algorithm>
-#include <vector>
-#include <queue>
-#include <set>
-#include <map>
-#include <string>
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
 using namespace std;
-const int MaxM = 15*15+10;
-const int MaxN = 15*15+10;
-const int maxnode = MaxN * MaxM;
-const int INF = 0x3f3f3f3f;
-#define eps 1e-8
-struct DLX
-{
-    int n,m,size;
-    int U[maxnode],D[maxnode],R[maxnode],L[maxnode];//十字链表
-    int Row[maxnode],Col[maxnode];//各个节点再那行那列
-    int H[MaxN];//每行的第一个节点的编号
-    int S[MaxM];//每列的剩余节点
-    int ansd;//答案
-    void init(int _n,int _m)//初始化
-    {
+
+struct DLX {
+    const static int maxnode = 100010; //最多多少个‘1’
+    const static int MaxM = 1010;//最大行数
+    const static int MaxN = 1010;//最大列数
+    int n,m,SIZE;
+    int U[maxnode],D[maxnode],R[maxnode],L[maxnode],Row[maxnode],Col[maxnode];
+    //L,R,D,U四个数组记录某节点上下左右邻居
+    int H[MaxN], S[MaxM];//H记录排头，S记录某列有多少个节点
+    int ansd, ans[MaxN];//ansd记录覆盖所有列最少要用多少行，ans[]记录方案
+    void init(int _n,int _m) {//n为行数，m为列数
         n = _n;
         m = _m;
-        for(int i = 0;i <= m;i++)
-        {
-            S[i] = 0;
-            U[i] = D[i] = i;
-            L[i] = i-1;
-            R[i] = i+1;
+        for(int i = 0; i <= m; i++) {
+            S[i] = 0;U[i] = D[i] = i;L[i] = i-1;R[i] = i+1;
         }
-        R[m] = 0; L[0] = m;
-        size = m;
-        for(int i = 1;i <= n;i++)H[i] = -1;
+        R[m] = 0;L[0] = m;SIZE = m;
+        for(int i = 1; i <= n; i++) H[i] = -1;
     }
-    void Link(int r,int c)//再r行c列加入节点
-    {
-        ++S[Col[++size]=c];
-        Row[size] = r;
-        D[size] = D[c];
-        U[D[c]] = size;
-        U[size] = c;
-        D[c] = size;
-        if(H[r] < 0)H[r] = L[size] = R[size] = size;
-        else
-        {
-            R[size] = R[H[r]];
-            L[R[H[r]]] = size;
-            L[size] = H[r];
-            R[H[r]] = size;
+    void Link(int r,int c) {
+        ++S[Col[++SIZE]=c];
+        Row[SIZE] = r;
+        D[SIZE] = D[c];
+        U[D[c]] = SIZE;
+        U[SIZE] = c;
+        D[c] = SIZE;
+        if(H[r] < 0)H[r] = L[SIZE] = R[SIZE] = SIZE;
+        else {
+            R[SIZE] = R[H[r]];
+            L[R[H[r]]] = SIZE;
+            L[SIZE] = H[r];
+            R[H[r]] = SIZE;
         }
     }
-    void remove(int c)//删除一列
-    {
-        for(int i = D[c];i != c;i = D[i])
+    void exact_Remove(int c) {
+        L[R[c]] = L[c];
+        R[L[c]] = R[c];
+        for(int i = D[c]; i != c; i = D[i])
+            for(int j = R[i]; j != i; j = R[j]) {
+                U[D[j]] = U[j];
+                D[U[j]] = D[j];
+                --S[Col[j]];
+            }
+    }
+    void repeat_remove(int c) {
+        for(int i = D[c]; i != c; i = D[i])
             L[R[i]] = L[i], R[L[i]] = R[i];
     }
-    void resume(int c)//恢复一列
-    {
-        for(int i = U[c];i != c;i = U[i])
+    void repeat_resume(int c) {
+        for(int i = U[c]; i != c; i = U[i])
             L[R[i]] = R[L[i]] = i;
     }
-    bool v[MaxM];//记录各列有没有被标记
-    int f()//评估函数
-    {
-        int ret = 0;
-        for(int c = R[0]; c != 0;c = R[c])v[c] = true;
-        for(int c = R[0]; c != 0;c = R[c])
-            if(v[c])
-            {
-                ret++;
-                v[c] = false;
-                for(int i = D[c];i != c;i = D[i])
-                    for(int j = R[i];j != i;j = R[j])
-                        v[Col[j]] = false;
+
+    int f() { //估价函数。
+        bool vv[MaxM];
+        int ret = 0, c, i, j;
+        for(c = R[0]; c != 0; c = R[c]) vv[c] = 1;
+        for(c = R[0]; c != 0; c = R[c])
+            if(vv[c]) {
+                ++ret, vv[c] = 0;
+                for(i = D[c]; i != c; i = D[i])
+                    for(j = R[i]; j != i; j = R[j])
+                        vv[Col[j]] = 0;
             }
         return ret;
     }
-    void Dance(int d)//dfs搜索可能情况
-    {
-        if(d + f() >= ansd)return;
-        if(R[0] == 0)
-        {
-            if(d < ansd)ansd = d;
-            return;
+    /*
+    重复覆盖，d为搜索深度，ansd初始化为无穷大
+    如果只要找出可行解而不是最优解，可以找到解后直接return true
+    */
+    bool repeat_dance(int d) {
+        //求最优解时才使用
+        if(d + f() >= ansd) return false; //估价函数剪枝，A*搜索
+        if(R[0] == 0) {
+            if(d < ansd) ansd = d;
+            return true;
         }
+        bool flag=false;
+        int c = R[0], i, j;
+        for(i = R[0]; i; i = R[i])
+            if(S[i] < S[c]) c = i;
+        for(i = D[c]; i != c; i = D[i]) {
+            repeat_remove(i);
+            ans[d] = Row[i];
+            for(j = R[i]; j != i; j = R[j]) repeat_remove(j);
+            //如果只要找出可行解而不是最优解，可以找到解后直接return true
+            //if(repeat_dance(d+1)) return true;
+            if(repeat_dance(d + 1)) flag=true;
+            for(j = L[i]; j != i; j = L[j]) repeat_resume(j);
+            repeat_resume(i);
+        }
+        //return false;
+        return flag;
+    }
+    void exact_resume(int c) {
+        for(int i = U[c]; i != c; i = U[i])
+            for(int j = L[i]; j != i; j = L[j])
+                ++S[Col[U[D[j]]=D[U[j]]=j]];
+        L[R[c]] = R[L[c]] = c;
+    }
+    /*
+    精确覆盖，d为搜索深度，ansd初始化为无穷大
+    如果只要找出可行解而不是最优解，可以找到解后直接return true
+    */
+    bool exact_Dance(int d) {
+        //求最优解时才使用
+        if(d + f() >= ansd) return false;
+        if(R[0] == 0) {
+            if(d < ansd) ansd = d;
+            return true;
+        }
+        bool flag=false;
         int c = R[0];
-        for(int i = R[0];i != 0;i = R[i])
+        for(int i = R[0]; i != 0; i = R[i])
             if(S[i] < S[c])
                 c = i;
-        for(int i = D[c];i != c;i = D[i])
-        {
-            remove(i);
-            for(int j = R[i];j != i;j = R[j])remove(j);
-            Dance(d+1);
-            for(int j = L[i];j != i;j = L[j])resume(j);
-            resume(i);
+        exact_Remove(c);
+        for(int i = D[c]; i != c; i = D[i]) {
+            ans[d] = Row[i];
+            for(int j = R[i]; j != i; j = R[j]) exact_Remove(Col[j]);
+            //如果只要找出可行解而不是最优解，可以找到解后直接return true
+            //if(exact_Dance(d+1)) return true;
+            if(exact_Dance(d+1)) flag=true;
+            for(int j = L[i]; j != i; j = L[j]) exact_resume(Col[j]);
         }
+        exact_resume(c);
+        //return false;
+        return flag;
     }
-};
-DLX g;
-double x[58],y[58],x2[58],y2[58];
-bool vis[58];
+}dlx;
+
 int main()
 {
-	//freopen("in.txt","r",stdin);
-	int n,m,k,t;
-	scanf("%d",&t);
-	while(t--)
-	{
-		scanf("%d%d%d",&n,&m,&k);
-		for(int i = 1;i <= n;i++)
-			scanf("%lf%lf",&x[i],&y[i]);
-		for(int i = 1;i <= m;i++)
-			scanf("%lf%lf",&x2[i],&y2[i]);
-		double l = 0,r = 2000;
-		while(l+eps < r)
-		{
-			double mid = (l+r)/2;
-			int num = 0;
-			memset(vis,0,sizeof(vis));
-			g.init(m,n);
-			for(int i = 1;i <= m;i++)
-			{
-				for(int j = 1;j <= n;j++)
-				{
-					if(((x2[i]-x[j])*(x2[i]-x[j])+(y2[i]-y[j])*(y2[i]-y[j])) <= mid*mid)
-					{
-						g.Link(i,j);
-						if(!vis[j])	num++;
-						vis[j] = 1;
-					}
-				}
-			}
-			if(num < n)	l = mid;
-			else
-			{
-				g.ansd = INF;
-				g.Dance(0);
-				if(g.ansd <= k)	r = mid;
-				else l = mid;
-			}
-		}
-		printf("%.6f\n",l);
-	}
+    int n,m;
+    while(scanf("%d%d",&n,&m)!=EOF)
+    {
+        dlx.init(n,n);
+        int x,y;
+        for(int i=1;i<=m;++i)
+        {
+            scanf("%d%d",&x,&y);//在(x,y)和(y,x)处都有1
+            dlx.Link(x,y);dlx.Link(y,x);
+        }
+        for(int i=1;i<=n;++i) dlx.Link(i,i);//在(i,i)处有1
+        dlx.ansd=0x3f3f3f3f;
+        dlx.repeat_dance(0);
+        printf("%d\n",dlx.ansd);
+    }
 }

@@ -1,98 +1,163 @@
-#include <stdio.h>
-#include <iostream>
-#include <sstream>
-#include <stdlib.h>
-#include <string.h>
+/*
+题意：给定一个n*m的矩阵，有些位置为1，有些位置为0。
+如果G[i][j]==1则说明i行可以覆盖j列，
+选定最少的行，使得每列有且仅有一个1。
+*/
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
 using namespace std;
-struct DLX{
-    const static int maxn=1001,maxm=1010,maxnode=maxn*maxm;
-    int L[maxnode],R[maxnode],U[maxnode],D[maxnode];//十字链表
-    int ans[maxn],cnt;//解
-    int size;//节点数
-    int row[maxnode],col[maxnode];//各点行列编号
-    int S[maxm];//各列结点数
-    int H[maxn];
-    void del(int c){//删除一列
-        L[R[c]]=L[c];R[L[c]]=R[c];
-        for(int i=D[c];i!=c;i=D[i])
-            for(int j=R[i];j!=i;j=R[j])
-                U[D[j]]=U[j],D[U[j]]=D[j],--S[col[j]];
-    }
-    void add(int c){//恢复一列
-        R[L[c]]=L[R[c]]=c;
-        for(int i=U[c];i!=c;i=U[i])
-            for(int j=L[i];j!=i;j=L[j])
-                ++S[col[U[D[j]]=D[U[j]]=j]];
-    }
-    void init(int m){//初始化，建立虚拟节点
-        for(int i=0;i<=m;i++){
-            S[i]=0;
-            L[i]=i-1;
-            R[i]=i+1;
-            U[i]=D[i]=i;
+struct DLX {
+    const static int maxnode = 100010; //最多多少个‘1’
+    const static int MaxM = 1010;//最大行数
+    const static int MaxN = 1010;//最大列数
+    int n,m,SIZE;
+    int U[maxnode],D[maxnode],R[maxnode],L[maxnode],Row[maxnode],Col[maxnode];
+    //L,R,D,U四个数组记录某节点上下左右邻居
+    int H[MaxN], S[MaxM];//H记录排头，S记录某列有多少个节点
+    int ansd, ans[MaxN];//ansd记录覆盖所有列最少要用多少行，ans[]记录方案
+    void init(int _n,int _m) {//n为行数，m为列数
+        n = _n;
+        m = _m;
+        for(int i = 0; i <= m; i++) {
+            S[i] = 0;U[i] = D[i] = i;L[i] = i-1;R[i] = i+1;
         }
-        L[0]=m;R[m]=0;
-        size=m+1;
-        memset(H,-1,sizeof(H));
+        R[m] = 0;L[0] = m;SIZE = m;
+        for(int i = 1; i <= n; i++) H[i] = -1;
     }
-    void link(int x,int y){//加入一个节点
-        ++S[col[size]=y];
-        row[size]=x;
-        D[size]=D[y];
-        U[D[y]]=size;
-        U[size]=y;
-        D[y]=size;
-        if(H[x]<0)H[x]=L[size]=R[size]=size;
+    void Link(int r,int c) {
+        ++S[Col[++SIZE]=c];
+        Row[SIZE] = r;
+        D[SIZE] = D[c];
+        U[D[c]] = SIZE;
+        U[SIZE] = c;
+        D[c] = SIZE;
+        if(H[r] < 0)H[r] = L[SIZE] = R[SIZE] = SIZE;
         else {
-            R[size]=R[H[x]];
-            L[R[H[x]]]=size;
-            L[size]=H[x];
-            R[H[x]]=size;
+            R[SIZE] = R[H[r]];
+            L[R[H[r]]] = SIZE;
+            L[SIZE] = H[r];
+            R[H[r]] = SIZE;
         }
-        size++;
     }
-    bool dfs(int k){//dfs寻找可行方案
-        if(!R[0]){
-            cnt=k;
-            return 1;
-        }
-        int c=R[0];for(int i=R[0];i;i=R[i])if(S[c]>S[i])c=i;
-        del(c);
-        for(int i=D[c];i!=c;i=D[i]){
-            for(int j=R[i];j!=i;j=R[j])del(col[j]);
-            ans[k]=row[i];
-            if(dfs(k+1))return true;
-            for(int j=L[i];j!=i;j=L[j])add(col[j]);
-        }
-        add(c);
-        return 0;
+    void exact_Remove(int c) {
+        L[R[c]] = L[c];
+        R[L[c]] = R[c];
+        for(int i = D[c]; i != c; i = D[i])
+            for(int j = R[i]; j != i; j = R[j]) {
+                U[D[j]] = U[j];
+                D[U[j]] = D[j];
+                --S[Col[j]];
+            }
     }
-}dlx;
-int n,m;
-int main()
-{
-     //freopen("data.in","r",stdin);
-     //freopen("data.out","w",stdout);
-     while(scanf("%d%d",&n,&m)!=EOF){
-         int i,j,k;
-         dlx.init(m);
-         int c;
-         for(i=1;i<=n;i++){
-             scanf("%d",&c);
-             while(c--)
-             {
-                 scanf("%d",&j);
-                 dlx.link(i,j);
-             }
-         }
-         if(dlx.dfs(0))
-         {
-             printf("%d ",dlx.cnt);
-             for(int i=0;i<dlx.cnt;++i)
-                printf("%d ",dlx.ans[i]);
-         }
-         else printf("NO\n");
-         printf("\n");
-     }
-     return 0;
+    void repeat_remove(int c) {
+        for(int i = D[c]; i != c; i = D[i])
+            L[R[i]] = L[i], R[L[i]] = R[i];
+    }
+    void repeat_resume(int c) {
+        for(int i = U[c]; i != c; i = U[i])
+            L[R[i]] = R[L[i]] = i;
+    }
+
+    int f() { //估价函数。
+        bool vv[MaxM];
+        int ret = 0, c, i, j;
+        for(c = R[0]; c != 0; c = R[c]) vv[c] = 1;
+        for(c = R[0]; c != 0; c = R[c])
+            if(vv[c]) {
+                ++ret, vv[c] = 0;
+                for(i = D[c]; i != c; i = D[i])
+                    for(j = R[i]; j != i; j = R[j])
+                        vv[Col[j]] = 0;
+            }
+        return ret;
+    }
+    /*
+    重复覆盖，d为搜索深度，ansd初始化为无穷大
+    如果只要找出可行解而不是最优解，可以找到解后直接return true
+    */
+    bool repeat_dance(int d) {
+        //求最优解时才使用
+        if(d + f() >= ansd) return false; //估价函数剪枝，A*搜索
+        if(R[0] == 0) {
+            if(d < ansd) ansd = d;
+            return true;
+        }
+        bool flag=false;
+        int c = R[0], i, j;
+        for(i = R[0]; i; i = R[i])
+            if(S[i] < S[c]) c = i;
+        for(i = D[c]; i != c; i = D[i]) {
+            repeat_remove(i);
+            ans[d] = Row[i];
+            for(j = R[i]; j != i; j = R[j]) repeat_remove(j);
+            //如果只要找出可行解而不是最优解，可以找到解后直接return true
+            //if(repeat_dance(d+1)) return true;
+            if(repeat_dance(d + 1)) flag=true;
+            for(j = L[i]; j != i; j = L[j]) repeat_resume(j);
+            repeat_resume(i);
+        }
+        //return false;
+        return flag;
+    }
+    void exact_resume(int c) {
+        for(int i = U[c]; i != c; i = U[i])
+            for(int j = L[i]; j != i; j = L[j])
+                ++S[Col[U[D[j]]=D[U[j]]=j]];
+        L[R[c]] = R[L[c]] = c;
+    }
+    /*
+    精确覆盖，d为搜索深度，ansd初始化为无穷大
+    如果只要找出可行解而不是最优解，可以找到解后直接return true
+    */
+    bool exact_Dance(int d) {
+        //求最优解时才使用
+        if(d + f() >= ansd) return false;
+        if(R[0] == 0) {
+            if(d < ansd) ansd = d;
+            return true;
+        }
+        bool flag=false;
+        int c = R[0];
+        for(int i = R[0]; i != 0; i = R[i])
+            if(S[i] < S[c])
+                c = i;
+        exact_Remove(c);
+        for(int i = D[c]; i != c; i = D[i]) {
+            ans[d] = Row[i];
+            for(int j = R[i]; j != i; j = R[j]) exact_Remove(Col[j]);
+            //如果只要找出可行解而不是最优解，可以找到解后直接return true
+            //if(exact_Dance(d+1)) return true;
+            if(exact_Dance(d+1)) flag=true;
+            for(int j = L[i]; j != i; j = L[j]) exact_resume(Col[j]);
+        }
+        exact_resume(c);
+        //return false;
+        return flag;
+    }
+};
+
+DLX g;
+int main() {
+    int n,m,ca;
+    scanf("%d",&ca);
+    while(ca--) {
+        scanf("%d%d",&n,&m);
+        g.init(n,m);
+        for(int i = 1; i <= n; i++) {
+            int num;
+            for(int j=1; j<=m; j++) {
+                scanf("%d",&num);
+                if(num==1) g.Link(i,j);
+            }
+        }
+        g.ansd=0x3f3f3f3f;
+        if(!g.exact_Dance(0))printf("No\n");
+        else
+        {
+            printf("Yes\n");
+//            printf("%d ??\n",g.ansd);
+        }
+    }
+    return 0;
 }
