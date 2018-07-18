@@ -1,121 +1,100 @@
 #include <cstdio>
-#include <cstdlib>
-#include <algorithm>
 #include <cstring>
+#include <algorithm>
 #include <queue>
 using namespace std;
 #define N 1000010
-struct node{
-    node *next[26];
-    node *fail;
-    int sum;
-};
-char st[N];
-int n;
-node* new_node()
-{
-    node *p=(node*)malloc(sizeof(node));
-    memset(p,0,sizeof(node));
-    return p;
-}
-void Insert(char s[],node *root)
-{
-    node *p=root;
-    for(int i=0;s[i];++i)
+struct Trie{
+    const static int maxn=500010;
+    const static int sigma=26;
+    int next[maxn][sigma],fail[maxn],end[maxn];
+    int root,cnt;
+    int idx(char c){return c-'a';}
+    int new_node()
     {
-        int x=s[i]-'a';
-        if(p->next[x]==NULL)
-        {
-            node *pp=new_node();
-            memset(pp,0,sizeof(node));
-            p->next[x]=pp;
-        }
-        p=p->next[x];
+        memset(next[cnt],-1,sizeof(next[cnt]));
+        end[cnt]=0;
+        return cnt++;
     }
-    ++p->sum;
-}
-void build_fial_pointer(node *root)
-{
-    queue<node*> que;
-    que.push(root);
-    node *tmp;
-    while(!que.empty())
+    void init()
     {
-        tmp=que.front();que.pop();
-        for(int i=0;i<26;++i)
+        cnt=0;
+        root=new_node();
+    }
+    void insert(char st[])
+    {
+        int now=root;
+        for(int i=0;st[i];++i)
         {
-            if(tmp->next[i])
+            int x=idx(st[i]);
+            if(next[now][x]==-1)
+                next[now][x]=new_node();
+            now=next[now][x];
+        }
+        ++end[now];
+    }
+    void build()
+    {
+        queue<int> que;
+        for(int i=0;i<sigma;++i)
+            if(next[root][i]==-1)
+                next[root][i]=root;
+            else
             {
-                if(tmp==root) tmp->next[i]->fail=root;
+                fail[next[root][i]]=root;
+                que.push(next[root][i]);
+            }
+        while(!que.empty())
+        {
+            int x=que.front();que.pop();
+            for(int i=0;i<sigma;++i)
+            {
+                if(next[x][i]==-1)
+                    next[x][i]=next[fail[x]][i];
                 else
                 {
-                    node *p=tmp->fail;
-                    while(p)
-                    {
-                        if(p->next[i])
-                        {
-                            tmp->next[i]->fail=p->next[i];
-                            break;
-                        }
-                        p=p->fail;
-                    }
-                    if(p==NULL) tmp->next[i]->fail=root;
+                    fail[next[x][i]]=next[fail[x]][i];
+                    que.push(next[x][i]);
                 }
-                que.push(tmp->next[i]);
             }
         }
     }
-}
-int ac_automation(char s[],node *root)
-{
-    node *p=root;
-    int cnt=0;
-    for(int i=0;s[i];++i)
+    int query(char st[])
     {
-        int x=st[i]-'a';
-        while(!p->next[x]&&p!=root)
+        int ans=0,now=root;
+        for(int i=0;st[i];++i)
         {
-            p=p->fail;
-        }
-        p=p->next[x];
-        if(!p) p=root;
-        node *tmp=p;
-        while(tmp!=root)
-        {
-            if(tmp->sum>=0)
+            int x=idx(st[i]);
+            now=next[now][x];
+            int tmp=now;
+            while(tmp!=root&&end[tmp]!=-1)
             {
-                cnt+=tmp->sum;
-                tmp->sum=-1;
+                ans+=end[tmp];
+                end[tmp]=-1;
+                tmp=fail[tmp];
             }
-            else break;
-            tmp=tmp->fail;
         }
+        return ans;
     }
-    return cnt;
-}
-void destroy_tree(node *p)
-{
-    for(int i=0;i<26;++i)
-        if(p->next[i]) destroy_tree(p->next[i]);
-    free(p);
-}
+}ac;
+int n;
+char st[N];
 int main()
 {
     int ca;
     scanf("%d",&ca);
     while(ca--)
     {
-        node *root=new_node();
+        ac.init();
         scanf("%d",&n);
-        for(int i=0;i<n;++i)
+        for(int i=1;i<=n;++i)
         {
             scanf("%s",st);
-            Insert(st,root);
+            ac.insert(st);
         }
-        build_fial_pointer(root);
+        ac.build();
         scanf("%s",st);
-        printf("%d\n",ac_automation(st,root));
-        destroy_tree(root);
+        printf("%d\n",ac.query(st));
     }
     return 0;
 }
