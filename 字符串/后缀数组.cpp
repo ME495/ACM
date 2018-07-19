@@ -57,7 +57,7 @@ void get_SA(char s[],int n,int m) {
 //这里就不用那个122了，因为都有新的编号了
     }
 }
-void get_height(int n) {
+void get_height(char s[],int n) {
     int k=0;
     for (int i=1; i<=n; ++i) rk[sa[i]]=i;
     for (int i=1; i<=n; ++i) {
@@ -77,6 +77,6 @@ int main() {
 //我们第一次读入字符直接不用转化，按原来的ascll码来就可以了
 //因为转化数字和大小写字母还得分类讨论，怪麻烦的
     get_SA(s,n,m);
-//get_height();
+//get_height(s,n);
     for(int i=1;i<=n;++i) printf("%d ",sa[i]);
 }
