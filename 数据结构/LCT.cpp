@@ -185,7 +185,8 @@ struct LCT
 		make_root(x); 
 		fa[x] = y;
 	}
-	//LCT重要操作：在x与y在同一棵树且x为y的祖先的条件下，把x变为子树的根，并把y与y祖先之间的边彻底断开
+	//LCT重要操作：在x与y在同一棵树的条件下，把x变为子树的根，并把y与y祖先之间的边彻底断开
+	//如果x和y不直接相连，则在x到y的路径中，会断开最靠近y的边
 	void cut(int x, int y)
 	{
 		if (x == y || find_root(x) != find_root(y)) { puts("-1"); return; }
@@ -206,6 +207,23 @@ struct LCT
 		getlink(x, y);
 		return mx[y];
 	}
+	/*
+	//如果权值在边上，使用有根树，把边权值赋给儿子，此时统计x，y到lca路径上的值，
+	int query(int x, int y)
+	{
+		int ans=0;
+		access(y);
+		while(true)
+		{
+			splay(x);
+			if(fa[x]==0) break;
+			ans=max(ans,max(mx[ch[x][0]],v[x]));
+			x=fa[x];
+		}
+		ans=max(ans,mx[ch[x][1]]);
+		return ans;
+	}
+	*/
 	//LCT DEBUG
 	void alldown(int x)
 	{
