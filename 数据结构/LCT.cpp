@@ -178,6 +178,7 @@ struct LCT
 		access(y);
 	}
 	//LCT重要操作：在x与y不在同一棵树的条件下，把x变为子树的根，并把x链接为y的子节点
+	//如果是有根树，则x为y的祖先
 	void link(int x, int y)
 	{
 		if (x == y || find_root(x) == find_root(y)) { puts("-1"); return; }
