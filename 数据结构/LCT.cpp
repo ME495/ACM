@@ -184,7 +184,7 @@ struct LCT
 		make_root(x); 
 		fa[x] = y;
 	}
-	//LCT重要操作：在x与y在同一棵树的条件下，把x变为子树的根，并把y与y祖先之间的边彻底断开
+	//LCT重要操作：在x与y在同一棵树且x为y的祖先的条件下，把x变为子树的根，并把y与y祖先之间的边彻底断开
 	void cut(int x, int y)
 	{
 		if (x == y || find_root(x) != find_root(y)) { puts("-1"); return; }
