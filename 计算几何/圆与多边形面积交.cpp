@@ -128,7 +128,7 @@ int main(){
     Point O=Point(0,0);
     while (scanf("%lf",&R)!=EOF){
         scanf("%d",&n);
-        for (int i=1;i<=n;i++)//Ë³Ê±ÕëÄæÊ±Õë¾ù¿É£¡£¡£¡
+        for (int i=1;i<=n;i++)//é¡ºæ—¶é’ˆé€†æ—¶é’ˆå‡å¯ï¼ï¼ï¼
          scanf("%lf%lf",&p[i].x,&p[i].y);
         p[n+1]=p[1];
         double ans=0;
