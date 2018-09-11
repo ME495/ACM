@@ -1,4 +1,5 @@
 /**
+POJ 2411
 题意：给你n*m（1<=n,m<=11）的方格矩阵，要求用1*2的多米诺骨牌去填充，问有多少种填充方法
 使用2进制编码，1表示有向下延伸的插头
 **/
@@ -53,6 +54,7 @@ int main()
 }
 
 /*
+HDU 1693
 题意：给你一个m * n的棋盘，有的格子是障碍，找一条或多条回路使得经过每个非障碍格子恰好一次，问有多少中方法．m, n ≤ 12
 使用二进制编码，1表示有插头，参考cdq的论文
 */
@@ -106,6 +108,7 @@ int main()
 }
 
 /*
+URAL 1519
 题意：给你一个m * n的棋盘，有的格子是障碍，找一条回路使得经过每个非障碍格子恰好一次，问有多少中方法．m, n ≤ 12
 使用8进制编码，非0值表示插头属于的联通块，参考cdq的论文
 */
@@ -176,13 +179,6 @@ void dpblank(int x,int y,int cur)//对空白方格dp
     {
         decode(ha[cur].status[i],code,m);
 		int left=code[y-1],up=code[y];//(x,y)左方的插头和上方的插头
-        /*
-		if(...)
-		{
-			//可以把要特殊考率的点写在这里
-			continue;
-		}
-		*/
 		if(left&&up)//如果左方和右方的插头存在
         {
             if(left==up)//如果两个插头属于同一个联通块，则只有位于最后一个空白方格才能进行转移
@@ -227,12 +223,6 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                 code[y-1]=code[y]=9;//新联通块的编号不能与当前的重复
                 ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
             }
-			/*
-			//如果(x,y)是可选点
-			code[y-1]=code[y]=0;
-            if(y==m) shift(code,m);
-            ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
-			*/
         }
     }
 }
@@ -282,5 +272,201 @@ int main()
     }
     if(ex==0) printf("0\n");
     else printf("%I64d\n",solve());
+    return 0;
+}
+
+/*
+FZU 1977
+题意：输入一个n*m的地图，其中字母'O'的点是必走点，字母'X'是不能走的点,字母'*'是可走可不走的点，求经过所有点'O'的不同回路路径个数(路线相同起始点不同视为相同路径)。
+可以增加一个标志位来记录是否已经形成回路。
+*/
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+using namespace std;
+#define N 12
+#define M 100010
+typedef __int64 ll;
+struct Hash{
+    const static int mod=(1<<15)-1;
+    int head[mod+1],pre[M],sz;
+    ll status[M],f[M];
+    void init()
+    {
+        sz=0;
+        memset(head,-1,sizeof(head));
+    }
+    void insert(ll s,ll w)
+    {
+        ll h=s&mod;
+        for(int i=head[h];i!=-1;i=pre[i])
+        {
+            if(status[i]==s)
+            {
+                f[i]+=w;return;
+            }
+        }
+        status[sz]=s;f[sz]=w;pre[sz]=head[h];head[h]=sz++;
+    }
+}ha[2];
+int g[N+2][N+2];
+char st[N+10];
+int n,m,ex,ey;
+bool flag;
+ll ans;
+int decode(ll s,int code[])//按8进制解码，返回值为标志位的值
+{
+    for(int i=0;i<=m;++i)
+    {
+        code[i]=s&7;
+        s>>=3;
+    }
+    return s&1;
+}
+ll encode(int code[],int k)//按8进制编码，联通块用最小表示法表示
+{
+    int fa[10],cnt=0;
+    memset(fa,-1,sizeof(fa));
+    fa[0]=0;
+    ll s=0;
+    for(int i=0;i<=m;++i)
+    {
+        if(fa[code[i]]==-1) fa[code[i]]=++cnt;
+        code[i]=fa[code[i]];
+        s|=(ll)code[i]<<i*3;
+    }
+    if(k) s|=1LL<<(m+1)*3;//标志位
+    return s;
+}
+void shift(int code[])
+{
+    for(int i=m;i>0;--i) code[i]=code[i-1];
+    code[0]=0;
+}
+void dpblank(int x,int y,int cur)//对空白方格dp
+{
+    int code[N+1];
+    ll s;
+    for(int i=0;i<ha[cur].sz;++i)
+    {
+        int has_end=decode(ha[cur].status[i],code);//标志位，标志是否已经形成回路
+        int left=code[y-1],up=code[y];//(x,y)左方的插头和上方的插头
+        if(left&&up)//如果左方和右方的插头存在
+        {
+            if(left==up)//如果两个插头属于同一个联通块，则只有位于最后一个必选点之后的点才可以转移
+            {
+                if(flag&&!has_end)//位于最后一个必选点之后且还没有形成回路
+                {
+                    code[y-1]=code[y]=0;
+                    if(y==m) shift(code);//最后一列
+                    s=encode(code,1);
+                    ha[cur^1].insert(s,ha[cur].f[i]);
+                }
+            }
+            else//两个插头属于不同的联通块，则合并这两个联通块
+            {
+                code[y-1]=code[y]=0;
+                for(int i=0;i<=m;++i)
+                    if(code[i]==left) code[i]=up;
+                if(y==m) shift(code);
+                s=encode(code,has_end);
+                ha[cur^1].insert(s,ha[cur].f[i]);
+            }
+        }
+        else if((left&&!up)||(!left&&up))//左方或上方有一个插头
+        {
+            int t;
+            if(left) t=left;
+            else t=up;
+            if(g[x][y+1])//向右延伸
+            {
+                code[y-1]=0;code[y]=t;
+                s=encode(code,has_end);
+                ha[cur^1].insert(s,ha[cur].f[i]);
+            }
+            if(g[x+1][y])//向下延伸
+            {
+                code[y-1]=t;code[y]=0;
+                if(y==m) shift(code);//最后一列
+                s=encode(code,has_end);
+                ha[cur^1].insert(s,ha[cur].f[i]);
+            }
+        }
+        else//左方和上方都没有插头
+        {
+            if(g[x+1][y]&&g[x][y+1])//产生一个新联通块，向左和向右都要延伸
+            {
+                code[y-1]=code[y]=9;//新联通块的编号不能与当前的重复
+                s=encode(code,has_end);
+                ha[cur^1].insert(s,ha[cur].f[i]);
+            }
+            if(g[x][y]==1)//如果(x,y)位可选点，此时不选
+            {
+                code[y-1]=code[y]=0;
+                if(y==m) shift(code);
+                s=encode(code,has_end);
+                ha[cur^1].insert(s,ha[cur].f[i]);
+            }
+        }
+    }
+}
+void dpblock(int x,int y,int cur)//对障碍方格进行dp
+{
+    ll s;
+    int code[N+1];
+    for(int i=0;i<ha[cur].sz;++i)
+    {
+        int has_end=decode(ha[cur].status[i],code);
+        if(y==m) shift(code);//位于最后一列
+        s=encode(code,has_end);
+        ha[cur^1].insert(s,ha[cur].f[i]);
+    }
+}
+ll solve()
+{
+    if(ex==0) return 0;
+    int cur=0;
+    flag=false;
+    ha[cur].init();
+    ha[cur].insert(0,1);
+    for(int i=1;i<=n;++i)
+        for(int j=1;j<=m;++j)
+        {
+            if(i==ex&&j==ey) flag=true;
+            ha[cur^1].init();
+            if(g[i][j]) dpblank(i,j,cur);
+            else dpblock(i,j,cur);
+            cur^=1;
+        }
+    ll ans=0;
+    for(int i=0;i<ha[cur].sz;++i)
+    {
+        ans+=ha[cur].f[i];
+    }
+    return ans;
+} 
+int main()
+{
+    int ca;
+    scanf("%d",&ca);
+    for(int cas=1;cas<=ca;++cas)
+    {
+        scanf("%d%d",&n,&m);
+        ex=0;
+        memset(g,0,sizeof(g));
+        for(int i=1;i<=n;++i)
+        {
+            scanf("%s",st+1);
+            for(int j=1;j<=m;++j)
+                if(st[j]=='O') 
+                {
+                    g[i][j]=2;
+                    ex=i;ey=j;
+                }
+                else if(st[j]=='*')
+                    g[i][j]=1;
+        }
+        printf("Case %d: %I64d\n",cas,solve());
+    }
     return 0;
 }
