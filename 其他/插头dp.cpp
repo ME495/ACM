@@ -175,8 +175,15 @@ void dpblank(int x,int y,int cur)//对空白方格dp
     for(int i=0;i<ha[cur].sz;++i)
     {
         decode(ha[cur].status[i],code,m);
-        int left=code[y-1],up=code[y];//(x,y)左方的插头和上方的插头
-        if(left&&up)//如果左方和右方的插头存在
+		int left=code[y-1],up=code[y];//(x,y)左方的插头和上方的插头
+        /*
+		if(...)
+		{
+			//可以把要特殊考率的点写在这里
+			continue;
+		}
+		*/
+		if(left&&up)//如果左方和右方的插头存在
         {
             if(left==up)//如果两个插头属于同一个联通块，则只有位于最后一个空白方格才能进行转移
             {
@@ -220,6 +227,12 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                 code[y-1]=code[y]=9;//新联通块的编号不能与当前的重复
                 ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
             }
+			/*
+			//如果(x,y)是可选点
+			code[y-1]=code[y]=0;
+            if(y==m) shift(code,m);
+            ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
+			*/
         }
     }
 }
