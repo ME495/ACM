@@ -141,7 +141,7 @@ struct Hash{
 bool g[N+2][N+2];
 char st[N+10];
 int n,m,ex,ey;
-void decode(ll s,int code[])//按8进制解码
+void decode(ll s,int code[],int m)//按8进制解码
 {
     for(int i=0;i<=m;++i)
     {
@@ -149,7 +149,7 @@ void decode(ll s,int code[])//按8进制解码
         s>>=3;
     }
 }
-ll encode(int code[])//按8进制编码，联通块用最小表示法表示
+ll encode(int code[],int m)//按8进制编码，联通块用最小表示法表示
 {
     int fa[10],cnt=0;
     memset(fa,-1,sizeof(fa));
@@ -163,9 +163,10 @@ ll encode(int code[])//按8进制编码，联通块用最小表示法表示
     }
     return s;
 }
-void shift(ll &s)//左移三位，即乘8
+void shift(int code[],int m)
 {
-    s<<=3;
+    for(int i=m;i>0;--i) code[i]=code[i-1];
+    code[0]=0;
 }
 void dpblank(int x,int y,int cur)//对空白方格dp
 {
@@ -173,7 +174,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
     ll s;
     for(int i=0;i<ha[cur].sz;++i)
     {
-        decode(ha[cur].status[i],code);
+        decode(ha[cur].status[i],code,m);
         int left=code[y-1],up=code[y];//(x,y)左方的插头和上方的插头
         if(left&&up)//如果左方和右方的插头存在
         {
@@ -182,9 +183,8 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                 if(x==ex&&y==ey)//(x,y)位于最后一个方格
                 {
                     code[y-1]=code[y]=0;
-                    s=encode(code);
-                    if(y==m) shift(s);//最后一列
-                    ha[cur^1].insert(s,ha[cur].f[i]);
+                    if(y==m) shift(code,m);//最后一列
+                    ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
                 }
             }
             else//两个插头属于不同的联通块，则合并这两个联通块
@@ -192,9 +192,8 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                 code[y-1]=code[y]=0;
                 for(int i=0;i<=m;++i)
                     if(code[i]==left) code[i]=up;
-                s=encode(code);
-                if(y==m) shift(s);
-                ha[cur^1].insert(s,ha[cur].f[i]);
+                if(y==m) shift(code,m);
+                ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
             }
         }
         else if((left&&!up)||(!left&&up))//左方或上方有一个插头
@@ -205,15 +204,13 @@ void dpblank(int x,int y,int cur)//对空白方格dp
             if(g[x][y+1])//向右延伸
             {
                 code[y-1]=0;code[y]=t;
-                s=encode(code);
-                ha[cur^1].insert(s,ha[cur].f[i]);
+                ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
             }
             if(g[x+1][y])//向下延伸
             {
                 code[y-1]=t;code[y]=0;
-                s=encode(code);
-                if(y==m) shift(s);//最后一列
-                ha[cur^1].insert(s,ha[cur].f[i]);
+                if(y==m) shift(code,m);//最后一列
+                ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
             }
         }
         else//左方和上方都没有插头
@@ -221,8 +218,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
             if(g[x+1][y]&&g[x][y+1])//产生一个新联通块，向左和向右都要延伸
             {
                 code[y-1]=code[y]=9;//新联通块的编号不能与当前的重复
-                s=encode(code);
-                ha[cur^1].insert(s,ha[cur].f[i]);
+                ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
             }
         }
     }
@@ -230,11 +226,12 @@ void dpblank(int x,int y,int cur)//对空白方格dp
 void dpblock(int x,int y,int cur)//对障碍方格进行dp
 {
     ll s;
+    int code[N+1];
     for(int i=0;i<ha[cur].sz;++i)
     {
-        s=ha[cur].status[i];
-        if(y==m) shift(s);//会于最后一列
-        ha[cur^1].insert(s,ha[cur].f[i]);
+        decode(ha[cur].status[i],code,m);
+        if(y==m) shift(code,m);//会于最后一列
+        ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
     }
 }
 ll solve()
