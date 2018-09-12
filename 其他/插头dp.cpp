@@ -188,6 +188,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                     code[y-1]=code[y]=0;
                     if(y==m) shift(code,m);//最后一列
                     ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
+					//进行shift操作后，code数组改变，如果后面还要用，要重新decode
                 }
             }
             else//两个插头属于不同的联通块，则合并这两个联通块
@@ -197,6 +198,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                     if(code[i]==left) code[i]=up;
                 if(y==m) shift(code,m);
                 ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
+				//进行shift操作后，code数组改变，如果后面还要用，要重新decode
             }
         }
         else if((left&&!up)||(!left&&up))//左方或上方有一个插头
@@ -214,6 +216,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                 code[y-1]=t;code[y]=0;
                 if(y==m) shift(code,m);//最后一列
                 ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
+				//进行shift操作后，code数组改变，如果后面还要用，要重新decode
             }
         }
         else//左方和上方都没有插头
@@ -235,6 +238,7 @@ void dpblock(int x,int y,int cur)//对障碍方格进行dp
         decode(ha[cur].status[i],code,m);
         if(y==m) shift(code,m);//会于最后一列
         ha[cur^1].insert(encode(code,m),ha[cur].f[i]);
+		//进行shift操作后，code数组改变，如果后面还要用，要重新decode
     }
 }
 ll solve()
@@ -361,6 +365,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                     if(y==m) shift(code);//最后一列
                     s=encode(code,1);
                     ha[cur^1].insert(s,ha[cur].f[i]);
+					//进行shift操作后，code数组改变，如果后面还要用，要重新decode
                 }
             }
             else//两个插头属于不同的联通块，则合并这两个联通块
@@ -371,6 +376,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                 if(y==m) shift(code);
                 s=encode(code,has_end);
                 ha[cur^1].insert(s,ha[cur].f[i]);
+				//进行shift操作后，code数组改变，如果后面还要用，要重新decode
             }
         }
         else if((left&&!up)||(!left&&up))//左方或上方有一个插头
@@ -390,6 +396,7 @@ void dpblank(int x,int y,int cur)//对空白方格dp
                 if(y==m) shift(code);//最后一列
                 s=encode(code,has_end);
                 ha[cur^1].insert(s,ha[cur].f[i]);
+				//进行shift操作后，code数组改变，如果后面还要用，要重新decode
             }
         }
         else//左方和上方都没有插头
@@ -420,6 +427,7 @@ void dpblock(int x,int y,int cur)//对障碍方格进行dp
         if(y==m) shift(code);//位于最后一列
         s=encode(code,has_end);
         ha[cur^1].insert(s,ha[cur].f[i]);
+		//进行shift操作后，code数组改变，如果后面还要用，要重新decode
     }
 }
 ll solve()
