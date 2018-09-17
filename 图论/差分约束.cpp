@@ -20,99 +20,69 @@ Vs到某点如果不存在最短路径，即最短路为INF，则对于该点表
 2. 如果要求最小值的话，变为 x - y >= k 的标准形式，然后建立一条从 y到 x 权值为 k 的边，求出最长路径即可。 
 3. 如果权值为正，用Dijkstra，SPFA，BellmanFord都可以，如果为负不能用Dijkstra，并且需要判断是否有负环，有的话就不存在。
 */
-#include<iostream>
-#include<algorithm>
-#include<cstdio>
-#include<cstring>
-#include<queue>
-#define INF 0x7fffffff
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <queue>
 using namespace std;
-const int MAXN = 1100;
-const int MAXM = 30030;
-
-struct EdgeNode
+#define N 1010
+#define M 20010
+const int inf=0x3f3f3f3f;
+int head[N],to[M],w[M],pre[M],num[N],d[N];
+bool inque[N];
+int n,m1,m2,e;
+void addedge(int x,int y,int z)
 {
-    int to;
-    int w;
-    int next;
-}Edges[MAXM];
-
-int Head[MAXN],Dist[MAXN],vis[MAXN],outque[MAXN],id;
-
-void AddEdges(int u,int v,int w)
-{
-    Edges[id].to = v;
-    Edges[id].w = w;
-    Edges[id].next = Head[u];
-    Head[u] = id++;
+    to[e]=y;w[e]=z;pre[e]=head[x];head[x]=e++;
 }
-void SPFA(int s,int N)
+int spfa(int s,int t,int K)//K为图中点的数量，用来判负环
 {
-    int ans = 0;
-    memset(vis,0,sizeof(vis));
-    memset(outque,0,sizeof(outque));
-    for(int i = 1; i <= N; ++i)
-        Dist[i] = INF;
-    Dist[s] = 0;
-    vis[s] = 1;
-    queue<int> Q;
-    Q.push(s);
-    while( !Q.empty() )
+    memset(inque,0,sizeof(inque));
+    memset(d,0x3f,sizeof(d));//求最短路赋值为inf，最长路则赋值为-inf
+    queue<int> que;
+    que.push(1);d[1]=0;inque[1]=true;num[1]=1;
+    while(!que.empty())
     {
-        int u = Q.front();
-        Q.pop();
-        vis[u] = 0;
-        outque[u]++;
-        if(outque[u] > N+1) //如果出队次数大于N，则说明出现负环
+        int x=que.front();
+        que.pop();
+        inque[x]=false;
+        for(int i=head[x];i!=-1;i=pre[i])
         {
-            ans = -1;
-            break;
-        }
-        for(int i = Head[u]; i != -1; i = Edges[i].next)
-        {
-            int temp = Dist[u] + Edges[i].w;
-            if(temp < Dist[Edges[i].to])
+            int y=to[i],cost=d[x]+w[i];
+            if(cost<d[y])//求最短路时用小于，最长路则用大于
             {
-                Dist[Edges[i].to] = temp;
-                if( !vis[Edges[i].to])
+                d[y]=cost;
+                num[y]=num[x]+1;
+                if(num[y]>K) return -1;//如果起点到y之间点的数量超过K，形成负环
+                if(!inque[y])
                 {
-                    vis[Edges[i].to] = 1;
-                    Q.push(Edges[i].to);
+                    que.push(y);
+                    inque[y]=true;
                 }
             }
         }
     }
-
-    if(ans == -1)   //出现负权回路，不存在可行解
-        printf("-1\n");
-    else if(Dist[N] == INF) //可取任意值，都满足差分约束系统
-        printf("-2\n");
-    else
-        printf("%d\n",Dist[N]);  //求使得源点 s 到 终点 t 的最大的值
+    if(d[t]==inf) return -2;//s无法到达t，如果求最长路，则改为-inf
+    else return d[t];
 }
-
 int main()
 {
-    int N,ML,MD,u,v,w;
-    while(~scanf("%d%d%d", &N, &ML, &MD))
+    scanf("%d%d%d",&n,&m1,&m2);
+    memset(head,-1,sizeof(head));
+    e=0;
+    int x,y,z;
+    for(int i=1;i<=m1;++i)
     {
-        memset(Head,-1,sizeof(Head));
-        id = 0;
-        for(int i = 0; i < ML; ++i)
-        {
-            scanf("%d%d%d",&u,&v,&w);
-            AddEdges(u,v,w);//建边 u - v <= w
-        }
-        for(int i = 0; i < MD; ++i)
-        {
-            scanf("%d%d%d",&u,&v,&w);
-            AddEdges(v,u,-w);//建边 v - u <= w
-        }
-//这里不加也可以
-//        for(int i = 1; i < N; ++i)
-//            AddEdges(i+1,i,0);
-        SPFA(1,N);  //求使得源点 s 到 终点 t 的最大的值
+        scanf("%d%d%d",&x,&y,&z);
+        if(x>y) swap(x,y);
+        addedge(x,y,z);
     }
-
+    for(int i=1;i<=m2;++i)
+    {
+        scanf("%d%d%d",&x,&y,&z);
+        if(x>y) swap(x,y);
+        addedge(y,x,-z);
+    }
+    printf("%d\n",spfa(0,n,n+1));
     return 0;
 }
