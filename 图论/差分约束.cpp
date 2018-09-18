@@ -20,6 +20,9 @@ Vs到某点如果不存在最短路径，即最短路为INF，则对于该点表
 2. 如果要求最小值的话，变为 x - y >= k 的标准形式，然后建立一条从 y到 x 权值为 k 的边，求出最长路径即可。 
 3. 如果权值为正，用Dijkstra，SPFA，BellmanFord都可以，如果为负不能用Dijkstra，并且需要判断是否有负环，有的话就不存在。
 */
+/*
+POJ 3169
+*/
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
@@ -39,25 +42,27 @@ int spfa(int s,int t,int K)//K为图中点的数量，用来判负环
 {
     memset(inque,0,sizeof(inque));
     memset(d,0x3f,sizeof(d));//求最短路赋值为inf，最长路则赋值为-inf
-    queue<int> que;
-    que.push(1);d[1]=0;inque[1]=true;num[1]=1;
+    deque<int> que;
+    que.push_back(s);d[s]=0;inque[s]=true;num[s]=1;
     while(!que.empty())
     {
         int x=que.front();
-        que.pop();
+        que.pop_front();
         inque[x]=false;
         for(int i=head[x];i!=-1;i=pre[i])
         {
             int y=to[i],cost=d[x]+w[i];
-            if(cost<d[y])//求最短路时用小于，最长路则用大于
+            if(cost<d[y])//求最短路时用小于号，最长路则用大于号
             {
                 d[y]=cost;
                 num[y]=num[x]+1;
                 if(num[y]>K) return -1;//如果起点到y之间点的数量超过K，形成负环
                 if(!inque[y])
                 {
-                    que.push(y);
                     inque[y]=true;
+                    if(!que.empty()&&d[y]<=d[que.front()])//求最短路用小于等于号，求最长路用大于等于号
+                        que.push_front(y);
+                    else que.push_back(y);
                 }
             }
         }
@@ -83,6 +88,6 @@ int main()
         if(x>y) swap(x,y);
         addedge(y,x,-z);
     }
-    printf("%d\n",spfa(0,n,n+1));
+    printf("%d\n",spfa(1,n,n));
     return 0;
 }
