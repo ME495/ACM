@@ -465,83 +465,109 @@ int main()
 /*
 无向图求点双联通分量
 */
-#include<iostream>
-#include<cstdio>
-#include<algorithm>
-#include<cstring>
-#include<stack>
-#include<vector>
+#include <bits/stdc++.h>
 using namespace std;
-#define maxn 7500
-#define inf 0x3f3f3f3f
-int n,m;
-int g[maxn][maxn];
-int clock;
-int low[maxn],pre[maxn];
-stack<int>s;
-int bc;
-vector<int>bcc[maxn];
-int dfs(int u,int fa){
-     low[u]=pre[u]=++clock;
-     s.push(u);
-     for(int v=1;v<=n;v++){
-        if(!g[u][v])continue;
-        if(!pre[v]){
-            int lowv=dfs(v,u);
-            low[u]=min(low[u],lowv);
-            if(lowv>=pre[u]){
-                bc++;
-                bcc[bc].clear();
-                int tmp=-1;
-                while(!s.empty()){
-                    tmp=s.top();
-                    s.pop();
-                    bcc[bc].push_back(tmp);
-                    if(tmp==u)break;
-                }
-                if(tmp!=-1)s.push(tmp);  //割顶要加回去，任意割顶至少是两个不同双联通分量的公共点
+#define N 100010
+struct edge{
+    int x,y,id;
+    edge(){}
+    edge(int x,int y,int id):x(x),y(y),id(id){}
+};
+int head[N],to[N*2],pre[N*2],w[N*2],dfn[N],low[N];
+int n,m,e,cnt,bc;
+vector<int> bcc_node[N];
+vector<edge> bcc_edge[N];
+stack<edge> sta;
+void addedge(int x,int y,int z)
+{
+    to[e]=y;w[e]=z;pre[e]=head[x];head[x]=e++;
+}
+void init()
+{
+    for(int i=1;i<=n;++i) 
+    {
+        head[i]=-1;dfn[i]=0;
+    }
+    while(!sta.empty()) sta.pop();
+    e=cnt=bc=0;
+}
+void dfs1(int x,int id)
+{
+    dfn[x]=low[x]=++cnt;
+    for(int i=head[x];i!=-1;i=pre[i])
+    {
+        if(w[i]==id) continue;
+        int y=to[i];
+        if(!dfn[y])
+        {
+            sta.push(edge(x,y,w[i]));
+            dfs1(y,w[i]);
+            low[x]=min(low[x],low[y]);
+            if(low[y]>=dfn[x])
+            {
+                ++bc;
+                bcc_node[bc].clear();
+                bcc_edge[bc].clear();
+                edge tmp;
+                do{
+                    tmp=sta.top();
+                    sta.pop();
+                    bcc_edge[bc].push_back(tmp);
+                }while(tmp.id!=w[i]);
             }
         }
-       else if(pre[v]<pre[u]&&fa!=v){
-            low[u]=min(low[u],pre[v]);
+        else
+        {
+            low[x]=min(low[x],dfn[y]);
+            if(dfn[x]>dfn[y])
+                sta.push(edge(x,y,w[i]));
         }
-     }
-     return low[u];
+    }
 }
-void inital(){
-    clock=0;
-    bc=0;
-    memset(pre,0,sizeof pre);
-    memset(low,inf,sizeof low);
-    while(!s.empty()){
-        s.pop();
+void print_bcc()
+{
+    for(int i=1;i<=bc;++i)
+    {
+        printf("bcc %d:\n",i);
+        printf("node : ");
+        for(auto x:bcc_node[i]) 
+            printf("%d ",x);
+        printf("\n");
+        printf("edge : ");
+        for(auto e:bcc_edge[i]) 
+            printf("(%d,%d) ",e.x,e.y);
+        printf("\n");
     }
 }
 int main()
 {
-    int u,v;
-    while(~scanf("%d%d",&n,&m)){
-        inital();
-        for(int i=0;i<m;i++){
-            scanf("%d%d",&u,&v);
-            g[u][v]=g[v][u]=1;
+    int ca,x,y;
+    scanf("%d",&ca);
+    while(ca--)
+    {
+        scanf("%d%d",&n,&m);
+        init();
+        for(int i=1;i<=m;++i)
+        {
+            scanf("%d%d",&x,&y);
+            addedge(x,y,i);addedge(y,x,i);
         }
-        for(int i=1;i<=n;i++){
-            if(!pre[i])dfs(i,-1);
-        }
-         for(int i=1;i<=n;i++){
-            printf("%d %d\n",pre[i],low[i]);
-        }
- 
-        printf("下面是点联通分量%d:\n",bc);
-        for(int i=1;i<=bc;i++){
-            printf("%d:",i);
-            for(int j=0;j<bcc[i].size();j++){
-                printf("%d ",bcc[i][j]);
+        for(int i=1;i<=n;++i)
+            if(!dfn[i]) dfs1(i,-1);
+        for(int i=1;i<=bc;++i)
+        {
+            bcc_node[i].clear();
+            for(auto p:bcc_edge[i])
+            {
+                bcc_node[i].push_back(p.x);
+                bcc_node[i].push_back(p.y);
             }
-            printf("\n");
+            sort(bcc_node[i].begin(),bcc_node[i].end());
+            int sz=unique(bcc_node[i].begin(),bcc_node[i].end())-bcc_node[i].begin();
+            while(sz<bcc_node[i].size())
+                bcc_node[i].pop_back();
         }
- 
+        print_bcc();
     }
     return 0;
 }
