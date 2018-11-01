@@ -1,4 +1,5 @@
 /*
+POJ 2989
 题意：给出n个人，其中m对朋友，求极大团数量（若超过1000则输出“Too many maximal sets of friends.”）。
 算法：Bron-Kerbosch算法(DFS)
 */
